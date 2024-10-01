@@ -43,10 +43,9 @@ class QNetworkTrainer:
             idx_hat = torch.cat((tasks.unsqueeze(1), states, actions.unsqueeze(1)), dim=1)
         else:
             idx_hat = torch.cat((states, actions.unsqueeze(1)), dim=1)
-        
         return idx_hat
 
-    def train(self, loader, epochs, use_tasks=False):
+    def train(self, loader, epochs, use_tasks=False, mono=False):
         for e in range(epochs):
             total_loss = 0
             for i, batch in enumerate(loader):
@@ -61,7 +60,6 @@ class QNetworkTrainer:
                     loss = torch.nn.MSELoss()(q_hat, q_target)
                     loss.backward()
 
-                    # Zero the gradients of the other factors
                     with torch.no_grad():
                         for frozen_factor in self.Q.factors:
                             if frozen_factor is not factor:
@@ -70,8 +68,10 @@ class QNetworkTrainer:
                     self.opt.step()
 
                 total_loss += loss.item()
+                if mono:
+                    break
 
-            print(f"\rEpoch: {e} - Loss: {total_loss / (i + 1)}", end="")
+            # print(f"\rEpoch: {e} - Loss: {total_loss / (i + 1)}", end="")
 
 
 class QNetworkTester:
@@ -94,17 +94,17 @@ class QNetworkTester:
             bucket_actions=[nA],
         )
 
-    def run_episode(self, env, task_id=None):
+    def run_episode(self, env, task_id, multi_task):
         G = 0
         s, _ = env.reset()
-        s_idx = self.get_state_index(s, task_id)
+        s_idx = self.get_state_index(s, task_id, multi_task)
 
         for _ in range(self.H):
             s_ten = torch.tensor(s_idx).unsqueeze(0)
             a_idx = self.Q(s_ten).argmax().item()
             a = self.discretizer.get_action_from_index(a_idx)
             s, r, d, _, _ = env.step(a)
-            s_idx = self.get_state_index(s, task_id)
+            s_idx = self.get_state_index(s, task_id, multi_task)
 
             G += r
 
@@ -113,26 +113,22 @@ class QNetworkTester:
 
         return G
 
-    def get_state_index(self, state, task_id=None):
+    def get_state_index(self, state, task_id, multi_task):
         s_idx = self.discretizer.get_state_index(state)
-        if task_id is not None:
+        if multi_task:
             return tuple([task_id] + list(s_idx))
         return tuple(s_idx)
 
-    def test(self, task_id=None, multi_task=False):
+    def test(self, task_id, multi_task):
         Gs = []
         if task_id is not None:
             env = self.envs[task_id]
-            G = self.run_episode(env, task_id)
+            G = self.run_episode(env, task_id, multi_task)
             Gs.append(G)
-        elif multi_task:
-            for i, env in enumerate(self.envs):
-                G = self.run_episode(env, task_id=i)
-                Gs.append(G)
         else:
             for i, env in enumerate(self.envs):
                 env = self.envs[i]
-                G = self.run_episode(env, i)
+                G = self.run_episode(env, i, multi_task)
                 Gs.append(G)
 
         return Gs

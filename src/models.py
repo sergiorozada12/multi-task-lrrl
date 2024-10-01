@@ -2,13 +2,13 @@ import torch
 
 
 class PARAFAC(torch.nn.Module):
-    def __init__(self, dims, k, scale=1.0):
+    def __init__(self, dims, k, scale=1.0, bias=0.0):
         super().__init__()
 
         self.k = k
         self.n_factors = len(dims)
         self.factors = torch.nn.ParameterList([
-            torch.nn.Parameter(scale * torch.randn(dim, k, dtype=torch.double, requires_grad=True))
+            torch.nn.Parameter(scale * (torch.randn(dim, k, dtype=torch.double, requires_grad=True) - bias))
             for dim in dims
         ])
 

@@ -46,9 +46,12 @@ class PendulumEnv(gym.Env):
         newthdot = np.clip(newthdot, -self.max_speed, self.max_speed)
         newth = th + newthdot * dt
 
+        done = np.abs(newth) > (np.pi / 4)
+        costs += 100 * done
+
         self.state = np.array([newth, newthdot])
 
-        return self._get_obs(), -costs, False, False, {}
+        return self._get_obs(), -costs, done, False, {}
 
     def reset(self, *, seed: Optional[int] = None):
         super().reset(seed=seed)

@@ -1,6 +1,8 @@
 import multiprocessing
+import random
 from functools import partial
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
@@ -29,6 +31,10 @@ class ExperimentRunner:
         self.nT = len(gs)
 
     def run_single_task_experiment(self, n, task_id=0):
+        np.random.seed(n)
+        random.seed(n)
+        torch.manual_seed(n)
+
         sampler = PendulumTrajectorySampler(self.gs, self.m, self.l, self.E, self.H, self.nS, self.nA)
         sampler.sample_data()
 
@@ -39,9 +45,13 @@ class ExperimentRunner:
         trainer = QNetworkTrainer(Q, self.lr, self.gamma)
         trainer.train(loader_single, self.epochs, use_tasks=False)
         tester = QNetworkTester(Q, self.nS, self.nA, self.gs, self.m, self.l, self.H)
-        return tester.test(task_id, multi_task=False)
+        return tester.test(task_id=task_id, multi_task=False)
 
     def run_single_all_task_experiment(self, n):
+        np.random.seed(n)
+        random.seed(n)
+        torch.manual_seed(n)
+
         sampler = PendulumTrajectorySampler(self.gs, self.m, self.l, self.E, self.H, self.nS, self.nA)
         sampler.sample_data()
 
@@ -52,9 +62,13 @@ class ExperimentRunner:
         trainer = QNetworkTrainer(Q, self.lr, self.gamma)
         trainer.train(loader_mult, self.epochs, use_tasks=False)
         tester = QNetworkTester(Q, self.nS, self.nA, self.gs, self.m, self.l, self.H)
-        return tester.test(multi_task=False)
+        return tester.test(task_id=None, multi_task=False)
 
     def run_multi_task_experiment(self, n):
+        np.random.seed(n)
+        random.seed(n)
+        torch.manual_seed(n)
+
         sampler = PendulumTrajectorySampler(self.gs, self.m, self.l, self.E, self.H, self.nS, self.nA)
         sampler.sample_data()
 
@@ -65,7 +79,7 @@ class ExperimentRunner:
         trainer = QNetworkTrainer(Q, self.lr, self.gamma)
         trainer.train(loader_mult, self.epochs, use_tasks=True)
         tester = QNetworkTester(Q, self.nS, self.nA, self.gs, self.m, self.l, self.H)
-        return tester.test(multi_task=True)
+        return tester.test(task_id=None, multi_task=True)
 
     def run_experiments_distributed(self, experiment_type, task_id=None):
         if experiment_type == 'single_task':

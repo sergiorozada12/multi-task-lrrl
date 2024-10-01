@@ -19,7 +19,6 @@ class Discretizer:
         self.min_points_actions = np.array(min_points_actions)
         self.max_points_actions = np.array(max_points_actions)
         self.bucket_actions = np.array(bucket_actions)
-        # Think this better
         self.spacing_actions = (self.max_points_actions - self.min_points_actions) / (self.bucket_actions - 1)
 
         self.range_actions = self.max_points_actions - self.min_points_actions
