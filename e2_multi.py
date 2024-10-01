@@ -137,9 +137,9 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
                 s_idx = sp_idx
                 eps = max(eps * eps_decay, eps_min)
 
-            if episode % 10 == 0:
-                G = run_test_episode(Q, env_idx, H)
-                Gs[env_idx].append(G)
+                if h % 10 == 0:
+                    G = run_test_episode(Q, env_idx, H)
+                    Gs[env_idx].append(G)
         print(f"\rEpoch: {episode} - Return: {G}", end="", flush=True)
 
     return Gs
