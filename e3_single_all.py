@@ -8,9 +8,7 @@ from src.environments import PendulumEnv
 from src.utils import Discretizer
 from src.models import PARAFAC
 
-
 torch.set_num_threads(1)
-
 
 gs = [1.0, 5.0, 10.0, 20.0]
 m = 1
@@ -25,7 +23,7 @@ nT = len(gs)
 gamma = 0.9
 
 num_experiments = 100
-E = 400
+E = 500
 H = 100
 lr = 0.01
 eps = 0.1
@@ -90,13 +88,13 @@ def run_test_episode(Q, env_idx, H):
     with torch.no_grad():
         G = 0
         s, _ = envs[env_idx].reset()
-        s_idx = torch.tensor(tuple([env_idx]) + discretizer.get_state_index(s)).unsqueeze(0)
+        s_idx = torch.tensor(discretizer.get_state_index(s)).unsqueeze(0)
         for h in range(H):
             a_idx = Q(s_idx).argmax().item()
             a = discretizer.get_action_from_index(a_idx)
             a_idx = torch.tensor(a_idx).unsqueeze(0)
             sp, r, d, _, _ = envs[env_idx].step(a)
-            sp_idx = torch.tensor(tuple([env_idx]) + discretizer.get_state_index(sp)).unsqueeze(0)
+            sp_idx = torch.tensor(discretizer.get_state_index(sp)).unsqueeze(0)
 
             G += r
 
@@ -108,23 +106,22 @@ def run_test_episode(Q, env_idx, H):
     return G
 
 def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
-    Q = PARAFAC(dims=[nT, nS, nS, nA], k=k, scale=0.01)
+    Q = PARAFAC(dims=[nS, nS, nA], k=k, scale=0.01)
     opt = torch.optim.Adamax(Q.parameters(), lr=lr)
     Gs = [[] for _ in range(nT)]
-    
     for episode in range(E):
         for env_idx, env in enumerate(envs):
             s, _ = env.reset()
-            s_idx = torch.tensor(tuple([env_idx]) + discretizer.get_state_index(s)).unsqueeze(0)
+            s_idx = torch.tensor(discretizer.get_state_index(s)).unsqueeze(0)
             for h in range(H):
                 a, a_idx = select_action(Q, s_idx, eps)
                 a_idx = torch.tensor(a_idx).unsqueeze(0)
                 sp, r, d, _, _ = env.step(a)
-                sp_idx = torch.tensor(tuple([env_idx]) + discretizer.get_state_index(sp)).unsqueeze(0)
+                sp_idx = torch.tensor(discretizer.get_state_index(sp)).unsqueeze(0)
 
                 s_idx_train = torch.tensor(discretizer.get_state_index(s)).unsqueeze(0)
                 sp_idx_train = torch.tensor(discretizer.get_state_index(sp)).unsqueeze(0)
-                update_model(s_idx_train, sp_idx_train, a_idx, r, Q, opt, tasks=torch.tensor([env_idx]))
+                update_model(s_idx_train, sp_idx_train, a_idx, r, Q, opt, tasks=None)
 
                 if d:
                     break
@@ -133,9 +130,8 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
                 s_idx = sp_idx
                 eps = max(eps * eps_decay, eps_min)
 
-            if episode % 10 == 0:
-                G = run_test_episode(Q, env_idx, H)
-                Gs[env_idx].append(G)
+            G = run_test_episode(Q, env_idx, H)
+            Gs[env_idx].append(G)
         print(f"\rEpoch: {episode} - Return: {G}", end="", flush=True)
 
     return Gs
@@ -153,10 +149,10 @@ def pad_Gs(Gs_list):
 if __name__ == '__main__':
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     results = pool.map(partial(run_experiment, E=E, H=H, lr=lr, eps=eps, eps_decay=eps_decay, eps_min=eps_min, k=k), range(num_experiments))
-
+    
     pool.close()
     pool.join()
 
     # Pad and save the results
     padded_Gs = pad_Gs(results)
-    np.save("e2_multi.npy", padded_Gs)
+    np.save("e3_single_all.npy", padded_Gs)
