@@ -143,7 +143,7 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k, n_upd, env_id)
     return Gs
 
 def pad_Gs(Gs_list):
-    max_length = max(len(g) for exp_Gs in Gs_list for g in exp_Gs)
+    max_length = max(len(g) for g in Gs_list)
     padded_Gs = np.zeros((len(Gs_list), max_length))
 
     for i, exp_Gs in enumerate(Gs_list):
