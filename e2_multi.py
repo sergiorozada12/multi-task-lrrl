@@ -108,6 +108,10 @@ def run_test_episode(Q, env_idx, H):
     return G
 
 def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
+    np.random.seed(exp_num)
+    random.seed(exp_num)
+    torch.manual_seed(exp_num)
+
     Q = PARAFAC(dims=[nT, nS, nS, nA], k=k, scale=0.01)
     opt = torch.optim.Adamax(Q.parameters(), lr=lr)
     Gs = [[] for _ in range(nT)]
