@@ -10,35 +10,35 @@ from src.models import PARAFAC
 
 torch.set_num_threads(1)
 
-gs = [1.0, 5.0, 10.0, 20.0]
-m = 1
-l = 1
+gs = [10.0, 10.0, 10.0, 10.0]
+ms = [0.1, 0.2, 0.5, 1.0]
+ls = [1.0, 1.0, 1.0, 0.5]
 
-envs = [PendulumEnv(g=g, m=m, l=l) for g in gs]
+envs = [PendulumEnv(g=gs[i], m=ms[i], l=ls[i]) for i in range(len(gs))]
 
-nS = 10
+nS = 20
 nA = 10
-nT = len(gs)
-
-gamma = 0.9
-
-num_experiments = 100
-E = 500
-H = 100
-lr = 0.01
-eps = 0.1
-eps_decay = 1.0
-eps_min = 0.1
-k = 20
+nT = 4
 
 discretizer = Discretizer(
-    min_points_states=[-1, -5],
-    max_points_states=[1, 5],
+    min_points_states=[-np.pi, -5],
+    max_points_states=[np.pi, 5],
     bucket_states=[nS] * 2,
     min_points_actions=[-2],
     max_points_actions=[2],
     bucket_actions=[nA],
 )
+
+gamma = 0.99
+
+num_experiments = 100
+E = 1_000
+H = 100
+lr = 0.01
+eps = 1.0
+eps_decay = 0.99999
+eps_min = 0.1
+k = 20
 
 def create_target(states_next, rewards, Q, tasks=None):
     if tasks is not None:
@@ -110,7 +110,7 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
     random.seed(exp_num)
     torch.manual_seed(exp_num)
 
-    Q = PARAFAC(dims=[nS, nS, nA], k=k, scale=0.01)
+    Q = PARAFAC(dims=[nS, nS, nA], k=k, scale=0.1)
     opt = torch.optim.Adamax(Q.parameters(), lr=lr)
     Gs = [[] for _ in range(nT)]
     for episode in range(E):
@@ -134,9 +134,8 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
                 s_idx = sp_idx
                 eps = max(eps * eps_decay, eps_min)
 
-                if h % 10 == 0:
-                    G = run_test_episode(Q, env_idx, H)
-                    Gs[env_idx].append(G)
+            G = run_test_episode(Q, env_idx, H)
+            Gs[env_idx].append(G)
         print(f"\rEpoch: {episode} - Return: {G}", end="", flush=True)
 
     return Gs
@@ -159,5 +158,5 @@ if __name__ == '__main__':
     pool.join()
 
     # Pad and save the results
-    padded_Gs = pad_Gs(results)
-    np.save("e3_single_all.npy", padded_Gs)
+    # padded_Gs = pad_Gs(results)
+    np.save("e3_single_all.npy", results)
