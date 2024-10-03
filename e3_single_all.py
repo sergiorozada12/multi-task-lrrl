@@ -11,8 +11,8 @@ from src.models import PARAFAC
 torch.set_num_threads(1)
 
 gs = [10.0, 10.0, 10.0, 10.0]
-ms = [0.1, 0.2, 0.5, 1.0]
-ls = [1.0, 1.0, 1.0, 0.5]
+ms = [0.01, 0.1, 0.5, 1.0]
+ls = [1.0, 1.0, 0.5, 0.5]
 
 envs = [PendulumEnv(g=gs[i], m=ms[i], l=ls[i]) for i in range(len(gs))]
 
