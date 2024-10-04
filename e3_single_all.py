@@ -32,7 +32,7 @@ discretizer = Discretizer(
 gamma = 0.99
 
 num_experiments = 100
-E = 1_000
+E = 2_000
 H = 100
 lr = 0.01
 eps = 1.0
@@ -79,7 +79,8 @@ def select_action(Q, s_idx, epsilon):
     if np.random.rand() < epsilon:
         idx = np.random.choice(nA)
     else:
-        idx = Q(s_idx).argmax().item()
+        with torch.no_grad():
+            idx = Q(s_idx).argmax().item()
     
     a = discretizer.get_action_from_index(idx)
     return a, idx

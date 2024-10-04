@@ -18,10 +18,19 @@ class PARAFAC(torch.nn.Module):
             idx = indices[:, i]
             factor_vectors.append(self.factors[i][idx, :])        
         vectors = torch.stack(factor_vectors, dim=1)
-
         prod = torch.prod(vectors, dim=1)
 
-        if indices.shape[1] < self.n_factors:
-            return torch.matmul(prod, self.factors[-1].T)
+        n_non_used_factors = self.n_factors - indices.shape[1]
+        if n_non_used_factors > 0:
+            res = []
+            for cols in zip(
+                *[self.factors[-(a + 1)].t() for a in reversed(range(n_non_used_factors))]
+            ):
+                kr = cols[0]
+                for j in range(1, n_non_used_factors):
+                    kr = torch.kron(kr, cols[j])
+                res.append(kr)
+            factors_action = torch.stack(res, dim=1)
+            return torch.matmul(prod, factors_action.T)
 
         return torch.sum(prod, dim=-1)
