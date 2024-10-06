@@ -34,13 +34,14 @@ discretizer = Discretizer(
 gamma = 0.99
 
 num_experiments = 100
+num_processes = 50
 E = 10_000
 H = 100
 lr = 0.01
 eps = 1.0
 eps_decay = 0.99999
 eps_min = 0.1
-k = 20
+k = 30
 
 n_upd = nT
 env_id = 0
@@ -156,7 +157,7 @@ def pad_Gs(Gs_list):
     return padded_Gs
 
 if __name__ == '__main__':
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    pool = multiprocessing.Pool(processes=num_processes)
     results = pool.map(partial(run_experiment, E=E, H=H, lr=lr, eps=eps, eps_decay=eps_decay, eps_min=eps_min, k=k, n_upd=n_upd, env_id=env_id), range(num_experiments))
     
     pool.close()
