@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import torch
 
-from src.environments import PendulumEnv
+from src.environments import WirelessCommunicationsEnv
 from src.utils import Discretizer
 from src.models import PARAFAC
 
@@ -12,38 +12,63 @@ from src.models import PARAFAC
 torch.set_num_threads(1)
 
 
-gs = [10.0, 10.0, 10.0, 10.0]
-ms = [0.01, 0.1, 0.5, 1.0]
-ls = [1.0, 1.0, 0.5, 0.5]
+ts = [20, 15, 20, 10]
+p_harv = [0.2, 0.2, 0.4, 0.2]
+snrs = [10, 10, 10, 20]
 
-envs = [PendulumEnv(g=gs[i], m=ms[i], l=ls[i]) for i in range(len(gs))]
+H = 100
 
-nS = 20
-nA = 10
-nT = 4
+envs = [WirelessCommunicationsEnv(
+    T=H,
+    K=2,
+    snr_max=snrs[i],
+    snr_min=2,
+    snr_autocorr=0.7,
+    P_occ=np.array(
+        [  
+            [0.4, 0.6],
+            [0.6, 0.4],
+        ]
+    ),
+    occ_initial=[1, 1],
+    batt_harvest=1.0, 
+    P_harvest=0.2, 
+    batt_initial=10,
+    batt_max_capacity=10,
+    batt_weight=1.0, 
+    queue_initial=5,
+    queue_arrival=2,
+    queue_max_capacity=20,
+    t_queue_arrival=ts[i],
+    queue_weight=0.2,
+    loss_busy=0.8,  
+) for i in range(len(ts))]
+
+nS = [20, 20, 2, 2, 20, 20]
+nA = [10, 10]
+nT = len(ts)
+gamma = 0.99
 
 discretizer = Discretizer(
-    min_points_states=[-np.pi, -5],
-    max_points_states=[np.pi, 5],
-    bucket_states=[nS] * 2,
-    min_points_actions=[-2],
-    max_points_actions=[2],
-    bucket_actions=[nA],
+    min_points_states=[0, 0, 0, 0, 0, 0],
+    max_points_states=[20, 20, 1, 1, 20, 10],
+    bucket_states=[20, 20, 2, 2, 20, 20],
+    min_points_actions=[0, 0],
+    max_points_actions=[2, 2],
+    bucket_actions=[10, 10],
 )
-
-gamma = 0.99
 
 num_experiments = 100
 num_processes = 50
-E = 2_000
-H = 100
+E = 1_000
 lr = 0.01
 eps = 1.0
 eps_decay = 0.99999
-eps_min = 0.1
-k = 30
+eps_min = 0.01
 
-n_upd = nT
+k = 20
+n_upd = 1
+
 env_id = 0
 
 def create_target(states_next, rewards, Q, tasks=None):
@@ -59,9 +84,9 @@ def create_target(states_next, rewards, Q, tasks=None):
 
 def create_idx_hat(states, actions, tasks=None):
     if tasks is not None:
-        idx_hat = torch.cat((tasks.unsqueeze(1), states, actions.unsqueeze(1)), dim=1)
+        idx_hat = torch.cat((tasks.unsqueeze(1), states, actions), dim=1)
     else:
-        idx_hat = torch.cat((states, actions.unsqueeze(1)), dim=1)
+        idx_hat = torch.cat((states, actions), dim=1)
     return idx_hat
 
 def update_model(s_idx, sp_idx, a_idx, r, Q, opt, tasks=None):
@@ -81,17 +106,22 @@ def update_model(s_idx, sp_idx, a_idx, r, Q, opt, tasks=None):
 
         opt.step()
 
-def select_action(Q, s_idx, epsilon):
-    if np.random.rand() < epsilon:
-        idx = np.random.choice(nA)
-    else:
-        with torch.no_grad():
-            idx = Q(s_idx).argmax().item()
-    
-    a = discretizer.get_action_from_index(idx)
-    return a, idx
+def select_random_action() -> np.ndarray:
+        a_idx = tuple(np.random.randint(discretizer.bucket_actions).tolist())
+        return discretizer.get_action_from_index(a_idx), a_idx
 
-def run_test_episode(Q, env_idx, H):
+def select_greedy_action(Q, s_idx: np.ndarray) -> np.ndarray:
+    with torch.no_grad():
+        a_idx_flat = Q(s_idx).argmax().detach().item()
+        a_idx = np.unravel_index(a_idx_flat, discretizer.bucket_actions)
+        return discretizer.get_action_from_index(a_idx), a_idx
+
+def select_action(Q, s_idx: np.ndarray, epsilon: float) -> np.ndarray:
+    if np.random.rand() < epsilon:
+        return select_random_action()
+    return select_greedy_action(Q, s_idx)
+
+def run_test_episode(Q, env_idx):
     with torch.no_grad():
         G = 0
         s, _ = envs[env_idx].reset()
@@ -118,9 +148,8 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k, n_upd, env_id)
     torch.manual_seed(exp_num)
 
     Gs = []
-    Q = PARAFAC(dims=[nS, nS, nA], k=k, scale=0.1)
+    Q = PARAFAC(dims=nS + nA, k=k, scale=0.1)
     opt = torch.optim.Adamax(Q.parameters(), lr=lr)
-    ds = 0
     for episode in range(E):
         s, _ = envs[env_id].reset()
         s_idx = torch.tensor(discretizer.get_state_index(s)).unsqueeze(0)
@@ -133,28 +162,15 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k, n_upd, env_id)
             for _ in range(n_upd):
                 update_model(s_idx, sp_idx, a_idx, r, Q, opt)
 
-            if d:
-                ds += 1
-                break
-
             s = sp
             s_idx = sp_idx
-            eps = max(eps * eps_decay, eps_min)
+            eps = max(eps*eps_decay, eps_min)
 
-        G = run_test_episode(Q, env_id, H)
-        Gs.append(G)
-        print(f"\rEpoch: {episode} - Return: {G}", end="", flush=True)
-
+        if episode % 10 == 0:
+            G = run_test_episode(Q, env_id)
+            Gs.append(G)
+        print(f"\rEpoch: {episode} - Return: {G} - {eps}", end="", flush=True)
     return Gs
-
-def pad_Gs(Gs_list):
-    max_length = max(len(g) for g in Gs_list)
-    padded_Gs = np.zeros((len(Gs_list), max_length))
-
-    for i, exp_Gs in enumerate(Gs_list):
-        padded_Gs[i, :len(exp_Gs)] = exp_Gs
-
-    return padded_Gs
 
 if __name__ == '__main__':
     pool = multiprocessing.Pool(processes=num_processes)
@@ -163,6 +179,4 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-    # Pad and save the results
-    # padded_Gs = pad_Gs(results)
-    np.save(f"e1_single_env{env_id}.npy", results)
+    np.save(f"e1_wire_single_env{env_id}.npy", results)
