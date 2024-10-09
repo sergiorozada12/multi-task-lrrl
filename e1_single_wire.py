@@ -12,17 +12,18 @@ from src.models import PARAFAC
 torch.set_num_threads(1)
 
 
-ts = [20, 15, 20, 10]
-p_harv = [0.2, 0.2, 0.4, 0.2]
-snrs = [10, 10, 10, 20]
-
 H = 100
 
+ts = [20, 20, 20, 20]
+p_harv = [0.5, 0.5, 0.5, 0.5]
+qarr = [3, 3, 2, 1]
+lbus = [1.0, 0.8, 0.8, 0.1]
+
 envs = [WirelessCommunicationsEnv(
-    T=H,
+    T=1_000,
     K=2,
-    snr_max=snrs[i],
-    snr_min=2,
+    snr_max=10,
+    snr_min=8,
     snr_autocorr=0.7,
     P_occ=np.array(
         [  
@@ -37,11 +38,11 @@ envs = [WirelessCommunicationsEnv(
     batt_max_capacity=10,
     batt_weight=1.0, 
     queue_initial=5,
-    queue_arrival=2,
+    queue_arrival=qarr[i],
     queue_max_capacity=20,
     t_queue_arrival=ts[i],
     queue_weight=0.2,
-    loss_busy=0.8,  
+    loss_busy=lbus[i],  
 ) for i in range(len(ts))]
 
 nS = [20, 20, 2, 2, 20, 20]
@@ -60,14 +61,14 @@ discretizer = Discretizer(
 
 num_experiments = 100
 num_processes = 50
-E = 1_000
+E = 2_000
 lr = 0.01
 eps = 1.0
 eps_decay = 0.99999
 eps_min = 0.01
 
 k = 20
-n_upd = 1
+n_upd = nT
 
 env_id = 0
 
