@@ -14,7 +14,7 @@ torch.set_num_threads(1)
 H = 100
 
 lbus = [1.0, 0.8, 0.5, 0.0]
-
+ts = [40.0, 30.0, 20.0, 10.0]
 occs = [
     np.array([
         [0.2, 0.8],
@@ -49,8 +49,8 @@ envs = [WirelessCommunicationsEnv(
     batt_weight=1.0, 
     queue_initial=5,
     queue_arrival=3,
-    queue_max_capacity=10,
-    t_queue_arrival=20,
+    queue_max_capacity=20,
+    t_queue_arrival=ts[i],
     queue_weight=0.2,
     loss_busy=lbus[i],  
 ) for i in range(len(lbus))]
@@ -62,7 +62,7 @@ gamma = 0.99
 
 discretizer = Discretizer(
     min_points_states=[0, 0, 0, 0, 0, 0],
-    max_points_states=[20, 20, 1, 1, 10, 5],
+    max_points_states=[20, 20, 1, 1, 20, 5],
     bucket_states=[20, 20, 2, 2, 20, 20],
     min_points_actions=[0, 0],
     max_points_actions=[2, 2],
