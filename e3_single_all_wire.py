@@ -13,7 +13,7 @@ torch.set_num_threads(1)
 
 H = 100
 
-lbus = [1.0, 0.8, 0.5, 0.0]
+lbus = [1.0, 0.9, 0.8, 0.0]
 ts = [40.0, 30.0, 20.0, 10.0]
 occs = [
     np.array([
@@ -71,7 +71,7 @@ discretizer = Discretizer(
 
 num_experiments = 100
 num_processes = 50
-E = 2000
+E = 3000
 lr = 0.01
 eps = 1.0
 eps_decay = 0.99999
