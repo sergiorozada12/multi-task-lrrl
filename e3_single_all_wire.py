@@ -15,6 +15,7 @@ H = 100
 
 lbus = [1.0, 0.9, 0.8, 0.0]
 ts = [40.0, 30.0, 20.0, 10.0]
+b_harv = [0.1, 0.1, 1.0, 1.0]
 occs = [
     np.array([
         [0.2, 0.8],
@@ -42,7 +43,7 @@ envs = [WirelessCommunicationsEnv(
     snr_autocorr=0.7,
     P_occ=occs[i],
     occ_initial=[1, 1],
-    batt_harvest=1.0, 
+    batt_harvest=b_harv[i], 
     P_harvest=0.2, 
     batt_initial=10,
     batt_max_capacity=5,
@@ -55,7 +56,7 @@ envs = [WirelessCommunicationsEnv(
     loss_busy=lbus[i],  
 ) for i in range(len(lbus))]
 
-nS = [20, 20, 2, 2, 20, 20]
+nS = [10, 10, 2, 2, 10, 10]
 nA = [10, 10]
 nT = len(lbus)
 gamma = 0.99
@@ -63,7 +64,7 @@ gamma = 0.99
 discretizer = Discretizer(
     min_points_states=[0, 0, 0, 0, 0, 0],
     max_points_states=[20, 20, 1, 1, 20, 5],
-    bucket_states=[20, 20, 2, 2, 20, 20],
+    bucket_states=[10, 10, 2, 2, 10, 10],
     min_points_actions=[0, 0],
     max_points_actions=[2, 2],
     bucket_actions=[10, 10],
