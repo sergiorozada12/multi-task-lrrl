@@ -11,6 +11,7 @@ from src.models import PARAFAC
 
 torch.set_num_threads(1)
 
+H = 50
 
 lbus = [1.0, 0.9, 0.2, 0.0]
 ts = [20.0, 20.0, 10.0, 10.0]
