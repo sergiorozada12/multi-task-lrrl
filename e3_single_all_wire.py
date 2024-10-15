@@ -11,11 +11,11 @@ from src.models import PARAFAC
 torch.set_num_threads(1)
 
 
-H = 100
+H = 50
 
-lbus = [1.0, 0.9, 0.8, 0.0]
-ts = [40.0, 30.0, 20.0, 10.0]
-b_harv = [0.1, 0.1, 1.0, 1.0]
+lbus = [1.0, 0.9, 0.2, 0.0]
+ts = [20.0, 20.0, 10.0, 10.0]
+b_harv = [1.0, 1.0, 0.2, 0.2]
 occs = [
     np.array([
         [0.2, 0.8],
@@ -36,19 +36,19 @@ occs = [
 ]
 
 envs = [WirelessCommunicationsEnv(
-    T=1_000,
-    K=2,
+    T=H,
+    K=1,
     snr_max=10,
-    snr_min=2,
+    snr_min=10,
     snr_autocorr=0.7,
     P_occ=occs[i],
-    occ_initial=[1, 1],
+    occ_initial=[1],
     batt_harvest=b_harv[i], 
     P_harvest=0.2, 
     batt_initial=10,
     batt_max_capacity=5,
     batt_weight=1.0, 
-    queue_initial=5,
+    queue_initial=10,
     queue_arrival=3,
     queue_max_capacity=20,
     t_queue_arrival=ts[i],
@@ -56,18 +56,18 @@ envs = [WirelessCommunicationsEnv(
     loss_busy=lbus[i],  
 ) for i in range(len(lbus))]
 
-nS = [10, 10, 2, 2, 10, 10]
-nA = [10, 10]
+nS = [20, 2, 20, 10]
+nA = [10]
 nT = len(lbus)
 gamma = 0.99
 
 discretizer = Discretizer(
-    min_points_states=[0, 0, 0, 0, 0, 0],
-    max_points_states=[20, 20, 1, 1, 20, 5],
-    bucket_states=[10, 10, 2, 2, 10, 10],
-    min_points_actions=[0, 0],
-    max_points_actions=[2, 2],
-    bucket_actions=[10, 10],
+    min_points_states=[0, 0, 0, 0],
+    max_points_states=[20, 1, 20, 5],
+    bucket_states=[20, 2, 20, 10],
+    min_points_actions=[0],
+    max_points_actions=[2],
+    bucket_actions=[10],
 )
 
 num_experiments = 100
@@ -75,9 +75,9 @@ num_processes = 50
 E = 3000
 lr = 0.01
 eps = 1.0
-eps_decay = 0.99999
+eps_decay = 0.9999
 eps_min = 0.01
-k = 20
+k = 40
 
 def create_target(states_next, rewards, Q, tasks=None):
     if tasks is not None:
