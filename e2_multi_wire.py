@@ -12,23 +12,22 @@ from src.models import PARAFAC
 torch.set_num_threads(1)
 
 
-H = 50
-
 lbus = [1.0, 0.9, 0.2, 0.0]
 ts = [20.0, 20.0, 10.0, 10.0]
 b_harv = [1.0, 1.0, 0.2, 0.2]
+autocorr = [0.1, 0.1, 0.7, 0.7]
 occs = [
     np.array([
         [0.2, 0.8],
         [0.8, 0.2],
     ]),
     np.array([
-        [0.4, 0.6],
-        [0.6, 0.4],
+        [0.3, 0.7],
+        [0.7, 0.3],
     ]),
     np.array([
-        [0.6, 0.4],
-        [0.4, 0.6],
+        [0.7, 0.3],
+        [0.3, 0.7],
     ]),
     np.array([
         [0.8, 0.2],
@@ -41,7 +40,7 @@ envs = [WirelessCommunicationsEnv(
     K=1,
     snr_max=10,
     snr_min=10,
-    snr_autocorr=0.7,
+    snr_autocorr=autocorr[i],
     P_occ=occs[i],
     occ_initial=[1],
     batt_harvest=b_harv[i], 
