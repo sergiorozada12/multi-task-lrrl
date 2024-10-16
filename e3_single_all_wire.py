@@ -14,7 +14,7 @@ torch.set_num_threads(1)
 H = 50
 
 lbus = [0.5, 0.4, 0.2, 0.0]
-ts = [10.0, 10.0, 10.0, 10.0]
+ts = [20.0, 20.0, 10.0, 10.0]
 b_harv = [0.5, 0.4, 0.2, 0.2]
 autocorr = [0.4, 0.5, 0.6, 0.7]
 occs = [
@@ -76,8 +76,8 @@ num_processes = 50
 E = 3000
 lr = 0.01
 eps = 1.0
-eps_decay = 0.99999
-eps_min = 0.01
+eps_decay = 0.9999
+eps_min = 0.001
 k = 100
 
 def create_target(states_next, rewards, Q, tasks=None):
