@@ -71,7 +71,7 @@ discretizer = Discretizer(
     bucket_actions=[10],
 )
 
-num_experiments = 100
+num_experiments = 200
 num_processes = 50
 E = 3000
 lr = 0.01
