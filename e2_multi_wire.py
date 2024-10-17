@@ -73,12 +73,12 @@ discretizer = Discretizer(
 
 num_experiments = 50
 num_processes = 50
-E = 3000
-lr = 0.01
+E = 1_000
+lr = 0.05
 eps = 1.0
 eps_decay = 0.9999
 eps_min = 0.001
-k = 100
+k = 20
 
 def create_target(states_next, rewards, Q, tasks=None):
     if tasks is not None:
