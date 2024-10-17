@@ -54,7 +54,7 @@ envs = [WirelessCommunicationsEnv(
     queue_arrival=3,
     queue_max_capacity=20,
     t_queue_arrival=ts[i],
-    queue_weight=0.2,
+    queue_weight=0.3,
     loss_busy=lbus[i],  
 ) for i in range(len(lbus))]
 
@@ -79,7 +79,7 @@ lr = 0.01
 eps = 1.0
 eps_decay = 0.9999
 eps_min = 0.001
-k = 20
+k = 40
 n_upd = nT
 
 env_id = 0
