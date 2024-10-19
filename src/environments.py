@@ -10,6 +10,7 @@ DEFAULT_X = np.pi
 DEFAULT_Y = 1.0
 
 
+"""
 class PendulumEnv(gym.Env):
     def __init__(self, g=10.0, m=1.0, l=1.0):
         self.max_speed = 8
@@ -63,7 +64,7 @@ class PendulumEnv(gym.Env):
 
     def _get_obs(self):
         theta, thetadot = self.state
-        return np.array([theta, thetadot], dtype=np.float32)
+        return np.array([theta, thetadot], dtype=np.float32)"""
 
 
 class PendulumEnv(gym.Env):
@@ -100,6 +101,7 @@ class PendulumEnv(gym.Env):
         newthdot = thdot + (3 * g / (2 * l) * np.sin(th) + 3.0 / (m * l**2) * u) * dt
         newthdot = np.clip(newthdot, -self.max_speed, self.max_speed)
         newth = th + newthdot * dt
+        newth = (newth + np.pi) % (2 * np.pi) - np.pi
 
         cost = angle_normalize(th) ** 2 + 0.1 * thdot**2 + 0.1 * (u ** 2)
 
