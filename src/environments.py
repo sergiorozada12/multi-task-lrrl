@@ -171,6 +171,7 @@ class WirelessCommunicationsEnv:
         t_queue_arrival: int = 10, # Refilling of the queue
         queue_weight: float = 1e-1,  # Weight for the reward function
         loss_busy: float = 0.80,  # Loss in the channel when busy
+        n_packets: int = 1,
     ) -> None:
         self.T = T
         self.K = K
@@ -194,6 +195,7 @@ class WirelessCommunicationsEnv:
         self.queue_max_capacity = queue_max_capacity
 
         self.loss_busy = loss_busy
+        self.n_packets = n_packets
 
     def step(self, p: np.ndarray):
         p = np.clip(p, 0, 2)
@@ -233,8 +235,9 @@ class WirelessCommunicationsEnv:
             packets = np.sum(self.c[:, self.t - 1])
         self.queue[self.t] = self.queue[self.t - 1] - packets
 
-        if self.t % self.t_queue_arrival == 0:
-            self.queue[self.t] += self.queue_arrival
+        # if self.t % self.t_queue_arrival == 0:
+            # self.queue[self.t] += self.queue_arrival
+        self.queue[self.t] += self.n_packets if np.random.rand() < 0.5 else 0
 
         self.queue[self.t] = np.clip(self.queue[self.t], 0, self.queue_max_capacity)
 
