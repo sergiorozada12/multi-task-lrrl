@@ -11,70 +11,57 @@ from src.models import PARAFAC
 torch.set_num_threads(1)
 
 
-H = 50
+H = 100
 
-lbus = [0.0, 1.0, 0.9, 0.2]
-ts = [10.0, 20.0, 20.0, 10.0]
-b_harv = [0.2, 1.0, 1.0, 0.2]
-autocorr = [0.7, 0.1, 0.1, 0.7]
-occs = [
-    np.array([
-        [0.2, 0.8],
-        [0.8, 0.2],
-    ]),
-    np.array([
-        [0.3, 0.7],
-        [0.7, 0.3],
-    ]),
-    np.array([
-        [0.7, 0.3],
-        [0.3, 0.7],
-    ]),
-    np.array([
-        [0.8, 0.2],
-        [0.2, 0.8],
-    ])
-]
+lbus = [0.2, 0.2, 0.9, 1.0]
+b_harv = [0.2, 1.0, 1.0, 2.0]
+autocorr = [0.7, 0.7, 0.7, 0.7]
+npacks = [1.0, 1.0, 1.0, 2.0]
+pharv = [1.0, 0.5, 0.2, 1.0]
 
 envs = [WirelessCommunicationsEnv(
     T=H,
     K=1,
-    snr_max=10,
-    snr_min=10,
+    snr_max=5,
+    snr_min=5,
     snr_autocorr=autocorr[i],
-    P_occ=occs[i],
+    P_occ=np.array([
+        [0.5, 0.5],
+        [0.5, 0.5],
+    ]),
     occ_initial=[1],
     batt_harvest=b_harv[i], 
     P_harvest=0.2, 
     batt_initial=10,
-    batt_max_capacity=5,
-    batt_weight=1.0, 
-    queue_initial=10,
+    batt_max_capacity=10,
+    batt_weight=1.5, 
+    queue_initial=5,
     queue_arrival=3,
     queue_max_capacity=20,
-    t_queue_arrival=ts[i],
-    queue_weight=0.3,
-    loss_busy=lbus[i],  
+    t_queue_arrival=0,
+    queue_weight=0.2, # 0.2
+    loss_busy=lbus[i], 
+    n_packets=npacks[i]
 ) for i in range(len(lbus))]
 
-nS = [20, 2, 20, 10]
+nS = [20, 2, 10, 10]
 nA = [10]
 nT = len(lbus)
 gamma = 0.9
 
 discretizer = Discretizer(
     min_points_states=[0, 0, 0, 0],
-    max_points_states=[20, 1, 20, 5],
-    bucket_states=[20, 2, 20, 10],
+    max_points_states=[20, 1, 10, 10],
+    bucket_states=[20, 2, 10, 10],
     min_points_actions=[0],
     max_points_actions=[2],
     bucket_actions=[10],
 )
 
-num_experiments = 200
+num_experiments = 100
 num_processes = 100
-E = 1_000
-lr = 0.05
+E = 2_000
+lr = 0.01
 eps = 1.0
 eps_decay = 0.9999
 eps_min = 0.001
