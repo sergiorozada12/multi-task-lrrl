@@ -8,16 +8,18 @@ from src.environments import WirelessCommunicationsEnv
 from src.utils import Discretizer
 from src.models import PARAFAC
 
-torch.set_num_threads(1)
+torch.set_num_threads(2)
 
+H = 200
 
-H = 100
-
-lbus = [0.2, 0.2, 0.9, 1.0]
-b_harv = [0.2, 1.0, 1.0, 2.0]
+# lbus = [0.2, 0.2, 0.9, 1.0]
+lbus = [1.0, 1.0, 1.0, 1.0]
+b_harv = [0.5, 0.5, 0.5, 3.0]
 autocorr = [0.7, 0.7, 0.7, 0.7]
-npacks = [1.0, 1.0, 1.0, 2.0]
-pharv = [1.0, 0.5, 0.2, 1.0]
+qarr = [1.0, 1.0, 1.0, 2.0]
+#pharv = [1.0, 0.5, 0.8, 1.0]
+pharv = [0.2, 0.5, 0.5, 0.8]
+parr = [0.2, 0.2, 0.5, 0.8]
 
 envs = [WirelessCommunicationsEnv(
     T=H,
@@ -26,22 +28,22 @@ envs = [WirelessCommunicationsEnv(
     snr_min=5,
     snr_autocorr=autocorr[i],
     P_occ=np.array([
-        [0.5, 0.5],
-        [0.5, 0.5],
+        [0.8, 0.2],
+        [0.2, 0.8],
     ]),
     occ_initial=[1],
     batt_harvest=b_harv[i], 
-    P_harvest=0.2, 
+    P_harvest=pharv[i], 
+    P_arrival=parr[i],
     batt_initial=10,
     batt_max_capacity=10,
     batt_weight=1.5, 
-    queue_initial=5,
-    queue_arrival=3,
-    queue_max_capacity=20,
+    queue_initial=2,
+    queue_arrival=qarr[i],
+    queue_max_capacity=10,
     t_queue_arrival=0,
-    queue_weight=0.2, # 0.2
-    loss_busy=lbus[i], 
-    n_packets=npacks[i]
+    queue_weight=0.5, # 0.2
+    loss_busy=lbus[i]
 ) for i in range(len(lbus))]
 
 nS = [20, 2, 10, 10]
@@ -58,9 +60,9 @@ discretizer = Discretizer(
     bucket_actions=[10],
 )
 
-num_experiments = 100
-num_processes = 100
-E = 2_000
+num_experiments = 10
+num_processes = 20
+E = 500
 lr = 0.01
 eps = 1.0
 eps_decay = 0.9999
