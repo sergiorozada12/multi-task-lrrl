@@ -8,47 +8,44 @@ from src.environments import WirelessCommunicationsEnv
 from src.utils import Discretizer
 from src.models import PARAFAC
 
-torch.set_num_threads(2)
+torch.set_num_threads(1)
+
 
 H = 200
 
-# lbus = [0.2, 0.2, 0.9, 1.0]
-lbus = [1.0, 1.0, 1.0, 1.0]
 b_harv = [0.5, 0.5, 0.5, 3.0]
-autocorr = [0.7, 0.7, 0.7, 0.7]
-qarr = [1.0, 1.0, 1.0, 2.0]
-#pharv = [1.0, 0.5, 0.8, 1.0]
-pharv = [0.2, 0.5, 0.5, 0.8]
-parr = [0.2, 0.2, 0.5, 0.8]
+q_arr = [1.0, 1.0, 1.0, 2.0]
+p_harv = [0.2, 0.5, 0.5, 0.8]
+p_arr = [0.2, 0.2, 0.5, 0.8]
 
 envs = [WirelessCommunicationsEnv(
     T=H,
     K=1,
     snr_max=5,
     snr_min=5,
-    snr_autocorr=autocorr[i],
+    snr_autocorr=0.7,
     P_occ=np.array([
         [0.8, 0.2],
         [0.2, 0.8],
     ]),
     occ_initial=[1],
     batt_harvest=b_harv[i], 
-    P_harvest=pharv[i], 
-    P_arrival=parr[i],
+    P_harvest=p_harv[i], 
+    P_arrival=p_arr[i],
     batt_initial=10,
     batt_max_capacity=10,
     batt_weight=1.5, 
     queue_initial=2,
-    queue_arrival=qarr[i],
+    queue_arrival=q_arr[i],
     queue_max_capacity=10,
     t_queue_arrival=0,
-    queue_weight=0.5, # 0.2
-    loss_busy=lbus[i]
-) for i in range(len(lbus))]
+    queue_weight=0.5,
+    loss_busy=1.0
+) for i in range(len(b_harv))]
 
 nS = [20, 2, 10, 10]
 nA = [10]
-nT = len(lbus)
+nT = len(b_harv)
 gamma = 0.9
 
 discretizer = Discretizer(
@@ -60,8 +57,8 @@ discretizer = Discretizer(
     bucket_actions=[10],
 )
 
-num_experiments = 10
-num_processes = 20
+num_experiments = 200
+num_processes = 100
 E = 500
 lr = 0.01
 eps = 1.0
@@ -168,9 +165,8 @@ def run_experiment(exp_num, E, H, lr, eps, eps_decay, eps_min, k):
                 s = sp
                 s_idx = sp_idx
                 eps = max(eps*eps_decay, eps_min)
-            if episode % 10 == 0:
-                G = run_test_episode(Q, env_idx)
-                Gs[env_idx].append(G)
+            G = run_test_episode(Q, env_idx)
+            Gs[env_idx].append(G)
         print(f"\rEpoch: {episode} - Return: {[Gs[i][-1] for i in range(nT)]}", end="", flush=True)
     return Gs
 
