@@ -33,4 +33,4 @@ class PARAFAC(torch.nn.Module):
             factors_action = torch.stack(res, dim=1)
             return torch.matmul(prod, factors_action.T)
 
-        return torch.sum(prod, dim=-1)
+        return prod.sum(dim=-1, keepdim=True)
